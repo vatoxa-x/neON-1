@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NEon a ia</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="container">
+    <header>
+        <div>
+            <span style="opacity: 0.5; font-size: 0.8rem;">Чат: </span>
+            <strong class="{% if current_user.username == '!vatoxa!' %}admin-nick{% endif %}">{{ current_user.display_name or current_user.username }}</strong>
+            {% if current_user.username == '!vatoxa!' %}<a href="/admin" style="color:var(--admin); margin-left:10px; font-size:0.7rem; text-decoration:none; border:1px solid var(--admin); padding:2px 5px; border-radius:4px;">ADMIN</a>{% endif %}
+        </div>
+        <div style="font-weight: 800; letter-spacing: 2px; color: var(--accent);">NEon a ia</div>
+        <a href="/login" style="color:#ef4444; text-decoration:none; font-size:0.8rem;">Выйти</a>
+    </header>
+    <div class="chat-box" id="chat"></div>
+    <div style="padding: 15px; background: rgba(0,0,0,0.2);">
+        <form id="msgForm" style="flex-direction: row;">
+            <input name="content" id="contentInput" type="text" placeholder="Написать в NEon..." autocomplete="off" required style="flex:1;">
+            <button type="submit">></button>
+        </form>
+    </div>
+</div>
+<script>
+    const chat = document.getElementById('chat');
+    const form = document.getElementById('msgForm');
+    const input = document.getElementById('contentInput');
+    let lastMsgId = 0;
+
+    async function loadMessages() {
+        const res = await fetch('/api/messages');
+        const data = await res.json();
+        if (data.length === 0) { chat.innerHTML = ''; return; }
+        if (data[data.length-1].id === lastMsgId) return;
+        chat.innerHTML = '';
+        data.forEach(m => {
+            const isMe = m.raw_user === "{{ current_user.username }}";
+            const isAdmin = m.raw_user === "!vatoxa!";
+            const div = document.createElement('div');
+            div.className = `msg ${isMe ? 'me' : 'other'} ${isAdmin ? 'admin-border' : ''}`;
+            div.innerHTML = `
+                <span style="display:block; font-size:0.7rem; opacity:0.6; margin-bottom:3px;">
+                    <span class="${isAdmin ? 'admin-nick' : ''}">${m.user}</span> • ${m.time}
+                    {% if current_user.username == '!vatoxa!' %}
+                    <button onclick="deleteMsg(${m.id})" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:0.6rem;">[X]</button>
+                    {% endif %}
+                </span>
+                ${m.content}
+            `;
+            chat.appendChild(div);
+        });
+        chat.scrollTop = chat.scrollHeight;
+        lastMsgId = data[data.length-1].id;
+    }
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+        const formData = new FormData(form);
+        input.value = '';
+        await fetch('/send', { method: 'POST', body: formData });
+        loadMessages();
+    };
+    window.deleteMsg = async (id) => {
+        if(confirm('Удалить?')) {
+            await fetch(`/admin/delete_msg/${id}`, { method: 'POST' });
+            loadMessages();
+        }
+    };
+    setInterval(loadMessages, 3000);
+    loadMessages();
+</script>
+</body>
+</html>

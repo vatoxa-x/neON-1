@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход | Neon Chat</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v={{ range(1, 999) | random }}">
+    <style>
+        .auth-card h2 { margin-bottom: 30px; font-weight: 600; color: var(--text); }
+        .flash-msg { color: #ef4444; background: rgba(239, 68, 68, 0.1); padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 0.85rem; }
+    </style>
+</head>
+<body>
+    <div class="auth-card">
+        <h2>С возвращением!</h2>
+        
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            {% for message in messages %}<div class="flash-msg">{{ message }}</div>{% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <form method="POST">
+            <input name="username" type="text" placeholder="Логин" required autocomplete="off" autofocus>
+            <input name="password" type="password" placeholder="Пароль" required>
+            <button type="submit">Войти в чат</button>
+        </form>
+        
+        <a href="/register" style="color: var(--accent); display: block; margin-top: 20px; text-decoration: none; font-size: 0.9rem;">Нет аккаунта? Создать</a>
+    </div>
+</body>
+</html>

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Панель !vatoxa!</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="auth-card" style="max-width: 600px;">
+        <h2 style="color:var(--admin)">Панель управления</h2>
+        
+        <form action="/admin/clear" method="POST" onsubmit="return confirm('Очистить весь чат?')">
+            <button type="submit" style="background:#ef4444; width:100%;">УДАЛИТЬ ВСЕ СООБЩЕНИЯ ({{ count }})</button>
+        </form>
+        
+        <div style="margin-top:20px; text-align:left; background:rgba(0,0,0,0.2); border-radius:15px; padding:15px; max-height:400px; overflow-y:auto; border: 1px solid rgba(255,255,255,0.1);">
+            {% for u in users %}
+            <div style="margin-bottom:15px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:10px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <strong class="{% if u.username == '!vatoxa!' %}admin-nick{% endif %}">
+                        {{ u.username }} {% if u.is_banned %}(БАН){% endif %}
+                    </strong>
+                    {% if u.username != '!vatoxa!' %}
+                    <form action="/admin/ban/{{u.id}}" method="POST" style="width:auto;">
+                        <button type="submit" style="padding:5px 12px; font-size:0.75rem; background:{% if u.is_banned %}#22c55e{% else %}#ef4444{% endif %}; width:auto;">
+                            {% if u.is_banned %}Разбан{% else %}БАН{% endif %}
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+                <form action="/admin/rename/{{ u.id }}" method="POST" style="display:flex; flex-direction:row; gap:8px;">
+                    <input name="new_name" placeholder="Новое имя..." value="{{ u.display_name or u.username }}" style="padding:8px; font-size:0.85rem; flex:1; margin:0;">
+                    <button type="submit" style="padding:8px 15px; font-size:0.85rem; width:auto; margin:0;">OK</button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+        <a href="/" class="link">← Вернуться в чат</a>
+    </div>
+</body>
+</html>

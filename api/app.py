@@ -4,7 +4,6 @@ from flask import Flask, render_template, redirect, url_for, request, flash, jso
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from sqlalchemy.engine import URL
-app = app
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'neon-secret-key-2026'
 
@@ -143,6 +142,6 @@ def ban_user(user_id):
         u = User.query.get(user_id)
         if u and u.username != '!vatoxa!': u.is_banned = not u.is_banned; db.session.commit()
     return redirect(url_for('admin_panel'))
-
+app = app
 if __name__ == '__main__':
     app.run()

@@ -5,7 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from sqlalchemy.engine import URL
 
-# Настройка путей для Vercel (выходим из папки api в корень)
+# Настройка путей для Vercel
 base_dir = os.path.dirname(os.path.abspath(__file__))
 template_dir = os.path.join(base_dir, '..', 'templates')
 static_dir = os.path.join(base_dir, '..', 'static')
@@ -13,32 +13,37 @@ static_dir = os.path.join(base_dir, '..', 'static')
 app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
 app.config['SECRET_KEY'] = 'neon-secret-key-2026'
 
-
-# --- НАСТРОЙКА SUPABASE ЧЕРЕЗ POOLER (PORT 6543) ---
+# --- ПОДКЛЮЧЕНИЕ ЧЕРЕЗ ПУЛЕР (6543) ---
 db_url = URL.create(
     drivername="postgresql+pg8000",
     username="postgres.tvnrmmarvwumojnolubs",
     password="NEON111vrqw",
     host="aws-1-eu-west-1.pooler.supabase.com",
-    port=6543,  # ИСПОЛЬЗУЕМ ПОРТ ПУЛЕРА
+    port=6543,
     database="postgres"
 )
 
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# ЖЕСТКИЕ ЛИМИТЫ ДЛЯ ОБЛАЧНОГО ДЕПЛОЯ (VERCEL)
+# ОПТИМИЗИРОВАННЫЙ ПУЛ ДЛЯ БЫСТРОГО ЧАТА
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-    "pool_size": 1,           
-    "max_overflow": 0,        
-    "pool_recycle": 20,       
-    "pool_pre_ping": True     
+    "pool_size": 3,           # Разрешаем 3 параллельных соединения
+    "max_overflow": 2,        # +2 в запасе при пиках
+    "pool_recycle": 15,       # Сброс каждые 15 сек
+    "pool_pre_ping": True     # Проверка связи
 }
+
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
-# Модели данных
+# --- ОЧИСТКА СОЕДИНЕНИЙ (ВАЖНО ДЛЯ VERCEL) ---
+@app.teardown_appcontext
+def shutdown_session(exception=None):
+    db.session.remove()
+
+# Модели
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
@@ -57,14 +62,14 @@ class Message(db.Model):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# Инициализация базы и админа (выполняется при холодном старте Vercel)
+# Инициализация
 with app.app_context():
     db.create_all()
     if not User.query.filter_by(username='!vatoxa!').first():
         db.session.add(User(username='!vatoxa!', display_name='!vatoxa!', password='2026'))
         db.session.commit()
 
-# --- МАРШРУТЫ ЧАТА ---
+# --- МАРШРУТЫ ---
 @app.route('/')
 @login_required
 def index():
@@ -79,7 +84,9 @@ def get_messages():
     try:
         messages = Message.query.order_by(Message.timestamp.asc()).all()
         return jsonify([{"id": m.id, "user": m.user.display_name or m.user.username, "raw_user": m.user.username, "content": m.content, "time": m.timestamp.strftime('%H:%M') if m.timestamp else '--:--'} for m in messages])
-    except: return jsonify([])
+    except: 
+        db.session.rollback()
+        return jsonify([])
 
 @app.route('/send', methods=['POST'])
 @login_required
@@ -91,7 +98,6 @@ def send_message():
         db.session.commit()
     return "", 204
 
-# --- ВХОД / РЕГИСТРАЦИЯ ---
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -126,7 +132,7 @@ def admin_panel():
 @login_required
 def clear_chat():
     if current_user.username == '!vatoxa!':
-        db.session.query(Message).delete()
+        Message.query.delete()
         db.session.commit()
     return redirect(url_for('admin_panel'))
 
@@ -155,9 +161,8 @@ def ban_user(user_id):
         if u and u.username != '!vatoxa!': u.is_banned = not u.is_banned; db.session.commit()
     return redirect(url_for('admin_panel'))
 
-# Vercel ищет переменную 'app'
+# Vercel app
 app = app
 
 if __name__ == '__main__':
     app.run()
-

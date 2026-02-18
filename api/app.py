@@ -4,7 +4,7 @@ from flask import Flask, render_template, redirect, url_for, request, flash, jso
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from sqlalchemy.engine import URL
-app = Flask(__name__)
+app = Flask(__name__, template_folder='../templates', static_folder='../static')
 app.config['SECRET_KEY'] = 'neon-secret-key-2026'
 
 # --- ИСПРАВЛЕННЫЙ БЛОК ПОДКЛЮЧЕНИЯ ---
@@ -145,3 +145,4 @@ def ban_user(user_id):
 app = app
 if __name__ == '__main__':
     app.run()
+

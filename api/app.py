@@ -13,6 +13,7 @@ static_dir = os.path.join(base_dir, '..', 'static')
 app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
 app.config['SECRET_KEY'] = 'neon-secret-key-2026'
 
+
 # --- НАСТРОЙКА SUPABASE ЧЕРЕЗ POOLER (PORT 6543) ---
 db_url = URL.create(
     drivername="postgresql+pg8000",
@@ -28,13 +29,11 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # ЖЕСТКИЕ ЛИМИТЫ ДЛЯ ОБЛАЧНОГО ДЕПЛОЯ (VERCEL)
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-    "pool_size": 1,           # Один процесс Vercel = ОДНО соединение
-    "max_overflow": 0,        # Запрещаем создавать лишние
-    "pool_recycle": 20,       # Сбрасываем соединение каждые 20 сек
-    "pool_pre_ping": True,    # Проверяем базу перед запросом
-    "connect_timeout": 10     # Таймаут ожидания
+    "pool_size": 1,           
+    "max_overflow": 0,        
+    "pool_recycle": 20,       
+    "pool_pre_ping": True     
 }
-
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
@@ -161,3 +160,4 @@ app = app
 
 if __name__ == '__main__':
     app.run()
+

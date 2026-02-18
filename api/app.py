@@ -21,7 +21,12 @@ db_url = URL.create(
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # -------------------------------------
-
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    "pool_size": 1,          # Ограничиваем количество соединений
+    "max_overflow": 0,       # Не даем создавать лишние
+    "pool_recycle": 30,      # Пересоздаем соединение каждые 30 сек
+    "pool_pre_ping": True,   # Проверяем живое ли соединение
+}
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
@@ -145,4 +150,5 @@ def ban_user(user_id):
 app = app
 if __name__ == '__main__':
     app.run()
+
 

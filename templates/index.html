@@ -71,6 +71,32 @@
     };
     setInterval(loadMessages, 3000);
     loadMessages();
+        // Отправка сообщения
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+        const formData = new FormData(form);
+        const text = input.value; // Сохраняем текст для проверки
+        input.value = ''; // Очищаем поле мгновенно для скорости
+        
+        // Отправляем и СРАЗУ вызываем загрузку сообщений, не дожидаясь 3 секунд
+        await fetch('/send', { method: 'POST', body: formData });
+        await loadMessages(); 
+    };
+
+    // Удаление сообщения
+    window.deleteMsg = async (id) => {
+        if(confirm('Удалить?')) {
+            await fetch(`/admin/delete_msg/${id}`, { method: 'POST' });
+            await loadMessages(); // Обновляем мгновенно после удаления
+        }
+    };
+
+    // Уменьшаем интервал фоновой проверки с 3000мс до 1000мс (1 секунда)
+    // Чаще ставить не стоит, чтобы Supabase не заблокировал за слишком частые запросы
+    setInterval(loadMessages, 1000);
+    
+    // Первая загрузка
 </script>
 </body>
 </html>
+
